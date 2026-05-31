@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>orbit — devlog</title>
+  <style>
+    :root {
+      --bg:     #08090c;
+      --panel:  #0e1016;
+      --border: #1e2330;
+      --dim:    #38415a;
+      --mid:    #5a6688;
+      --accent: #7e8cf0;       /* electric periwinkle */
+      --glow:   #a6b2ff;
+      --hot:    #f0a85b;       /* trigger flash */
+      --text:   #e2e4f0;
+      --faint:  #8d92a8;
+      --green:  #6fae8c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── HERO ── */
+    .hero { text-align: center; padding: 72px 0 52px; }
+    #rings-cv {
+      display: block; margin: 0 auto 32px;
+      width: 200px; height: 200px;
+      border: 1px solid var(--border); border-radius: 50%;
+      background: #05060a;
+    }
+    h1.title { font-size: 42px; letter-spacing: 0.24em; color: var(--accent); font-weight: normal; line-height: 1; }
+    .subtitle { color: var(--faint); font-size: 13px; letter-spacing: 0.2em; margin-top: 10px; text-transform: lowercase; }
+    .meta { color: var(--dim); font-size: 11px; letter-spacing: 0.15em; margin-top: 8px; }
+
+    /* ── SECTIONS ── */
+    .section { margin-top: 64px; }
+    .section-label {
+      font-size: 10px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--accent);
+      border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 28px;
+    }
+    .concept p { color: var(--text); margin-bottom: 18px; max-width: 640px; }
+    .concept p:last-child { margin-bottom: 0; }
+    em { color: var(--accent); font-style: normal; }
+    code { color: var(--green); font-size: 12px; }
+
+    /* ── TRACK CARDS ── */
+    .track-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 520px) { .track-grid { grid-template-columns: 1fr; } }
+    .track-card { background: var(--panel); border: 1px solid var(--border); padding: 14px 16px; display: flex; gap: 14px; align-items: center; }
+    .track-card canvas { flex-shrink: 0; border: 1px solid var(--border); border-radius: 50%; background: #05060a; }
+    .track-card .info .abbr { color: var(--accent); font-size: 15px; letter-spacing: 0.1em; }
+    .track-card .info .nm { color: var(--text); font-size: 12px; margin-top: 2px; }
+    .track-card .info .df { color: var(--faint); font-size: 10px; margin-top: 6px; line-height: 1.5; }
+
+    /* ── EUCLID DIAGRAM ── */
+    #euclid-cv { display: block; width: 100%; max-width: 560px; height: 90px; margin: 4px 0 8px; border: 1px solid var(--border); background: #05060a; }
+    .cap { color: var(--dim); font-size: 11px; letter-spacing: 0.05em; }
+
+    /* ── TABLES ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; color: var(--mid); font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); }
+    td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { color: var(--accent); white-space: nowrap; width: 120px; }
+    td.note { color: var(--faint); font-size: 11px; }
+
+    /* ── DEVLOG ── */
+    .log-entry { margin-bottom: 40px; }
+    .log-date { color: var(--accent); font-size: 11px; letter-spacing: 0.3em; border-left: 2px solid var(--accent); padding-left: 12px; margin-bottom: 14px; }
+    .log-body { padding-left: 14px; border-left: 1px solid var(--border); }
+    .log-body p { color: var(--faint); margin-bottom: 12px; font-size: 13px; line-height: 1.7; }
+    .log-body p span.hl { color: var(--text); }
+    .log-body p:last-child { margin-bottom: 0; }
+
+    /* ── FOOTER / NAV ── */
+    .footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--dim); font-size: 11px; letter-spacing: 0.1em; text-align: center; }
+    .nav { position: sticky; top: 0; background: rgba(8,9,12,0.95); border-bottom: 1px solid var(--border); padding: 10px 0; display: flex; gap: 18px; flex-wrap: wrap; z-index: 10; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; }
+    .nav a { color: var(--dim); text-decoration: none; transition: color 0.2s; }
+    .nav a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <canvas id="rings-cv" width="200" height="200"></canvas>
+    <h1 class="title">orbit</h1>
+    <p class="subtitle">four euclidean rings, turning as one</p>
+    <p class="meta">norns · ack engine · euclidean · 2026</p>
+  </section>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="#concept">concept</a>
+    <a href="#euclid">euclidean</a>
+    <a href="#tracks">tracks</a>
+    <a href="#delay">per-track delay</a>
+    <a href="#controls">controls</a>
+    <a href="#devlog">devlog</a>
+  </nav>
+
+  <!-- CONCEPT -->
+  <section class="section" id="concept">
+    <p class="section-label">concept</p>
+    <div class="concept">
+      <p>
+        <em>orbit</em> is a four-track euclidean drum machine for norns. Each of its four tracks —
+        kick, clap, closed hat, open hat — rides its own concentric ring on screen, and the four
+        rings turn together on a single 1/16-note clock. A playhead sweeps each ring; when it
+        crosses an active step, that track fires. The visual and the sequencer are the same object:
+        <em>the rings you see are the pattern you hear</em>.
+      </p>
+      <p>
+        The whole instrument — sequencer, mixer, delay, and visualizer — is folded into that single
+        turning-rings screen. There is no separate pattern view; muting a track simply dims its ring,
+        and the selected track's ring is highlighted so you know which one the encoders will edit.
+      </p>
+    </div>
+  </section>
+
+  <!-- EUCLIDEAN -->
+  <section class="section" id="euclid">
+    <p class="section-label">the euclidean heart</p>
+    <div class="concept">
+      <p>
+        Every track's pattern is <em>generated, not drawn by hand</em>. A Euclidean algorithm spreads
+        <em>K</em> beats as evenly as possible across <em>N</em> steps — the maximally-even
+        distribution that underlies so much world percussion. You set, per track, the number of beats
+        and a rotation that shifts where the pattern starts.
+      </p>
+      <p>
+        The implementation is a compact accumulator rather than a recursive Bjorklund: it walks the
+        steps and drops a beat whenever a running fractional counter rolls over
+        (<code>bucket += K; if bucket >= N then bucket -= N; place beat</code>). Same even spread,
+        and trivially rotatable by index-shifting the resulting boolean table. (orbit fixes N at 16
+        steps.)
+      </p>
+    </div>
+    <canvas id="euclid-cv" width="560" height="90"></canvas>
+    <p class="cap">E(K,16) sweeping K from 1→16 — beats spread as evenly as the count allows (animated)</p>
+  </section>
+
+  <!-- TRACKS -->
+  <section class="section" id="tracks">
+    <p class="section-label">four tracks</p>
+    <div class="concept">
+      <p>
+        orbit uses <em>Ack</em>, the norns sample-playback engine — not a custom engine of its own.
+        It drives four Ack voices, one per track, controlling each voice's volume, pitch, and
+        low-/high-pass cutoff from the script. The defaults below ship a working beat the moment you
+        load it.
+      </p>
+    </div>
+    <div class="track-grid" id="track-grid"></div>
+  </section>
+
+  <!-- DELAY -->
+  <section class="section" id="delay">
+    <p class="section-label">per-track delay — the part that makes it orbit</p>
+    <div class="concept">
+      <p>
+        A standard drum machine sends everything to one delay bus. orbit instead gives <em>each track
+        its own independent delay</em>, and the delays are <em>trigger-based</em>: when a track fires,
+        it schedules its own ghost retriggers directly — each a decaying echo at a tempo-synced
+        division. This is the feature the whole instrument is built around.
+      </p>
+      <p>
+        Each track's delay has two controls: a <em>decay</em> (how much quieter each successive echo
+        is, in dB) and a <em>division</em> (the tempo-synced spacing of the echoes). Because each
+        track delays independently, you can run a slow dotted tail on the kick while the hats stutter
+        fast — polyrhythmic echo textures a single shared delay bus can't make.
+      </p>
+    </div>
+    <table>
+      <thead><tr><th>division options</th><th>spacing</th></tr></thead>
+      <tbody>
+        <tr><td>1/16 · 1/8 · 1/8.</td><td class="note">fast stutters and swung sixteenths</td></tr>
+        <tr><td>1/4 · 1/4. · 1/2</td><td class="note">mid tails, the default for kick &amp; clap (1/4)</td></tr>
+        <tr><td>1/2. · 1 bar</td><td class="note">long, sparse echoes</td></tr>
+      </tbody>
+    </table>
+    <p class="cap" style="margin-top:8px">decay defaults to 0 (delay off) on every track — you dial each tail in deliberately.</p>
+  </section>
+
+  <!-- CONTROLS -->
+  <section class="section" id="controls">
+    <p class="section-label">controls — the hold-modifier scheme</p>
+    <table>
+      <thead><tr><th>input</th><th>action</th><th>note</th></tr></thead>
+      <tbody>
+        <tr><td>E1 · E2 · E3</td><td>select / beats / rotation</td><td class="note">nothing held — edit the selected track's euclidean pattern</td></tr>
+        <tr><td>K2 (tap)</td><td>mute / unmute</td><td class="note">dims the track's ring</td></tr>
+        <tr><td>K2 + K3</td><td>play / stop</td><td class="note">the transport toggle</td></tr>
+        <tr><td>K2 + E1/E2/E3</td><td>volume / LPF / HPF</td><td class="note">K2 turns the encoders into a mixer</td></tr>
+        <tr><td>K3 + E1/E2/E3</td><td>pitch / decay / division</td><td class="note">K3 turns them into pitch + per-track delay</td></tr>
+        <tr><td>hold K1</td><td>info screen</td><td class="note">the controls reference</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- DEVLOG -->
+  <section class="section" id="devlog">
+    <p class="section-label">devlog</p>
+    <div class="log-entry">
+      <p class="log-date">2026-04-01 — initial implementation</p>
+      <div class="log-body">
+        <p>
+          <span class="hl">orbit lands whole.</span> Four euclidean tracks on the Ack engine, each a
+          concentric ring on a single 1/16 clock, with the accumulator-based euclidean generator, the
+          per-track trigger-based ghost-retrigger delay (decay in dB + tempo-synced division), a
+          K2/K3 hold-modifier control scheme, and the rings-as-sequencer screen. Default kit:
+          kick E(4,16), clap E(2,16) rotated, closed hat E(8,16), open hat E(3,16) rotated.
+        </p>
+      </div>
+    </div>
+    <div class="log-entry">
+      <p class="log-date">2026-04-02 — README</p>
+      <div class="log-body">
+        <p>A documentation pass — the controls table, track map, and install notes. The repo has stayed at this shape since: a finished, single-purpose instrument.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>orbit · norns · 2026 · personal devlog</p>
+  </footer>
+
+  <script>
+    const ACC = '126,140,240', GLOW = '166,178,255', HOT = '240,168,91', DIM = '56,65,90', GRN = '111,174,140';
+    const rgba = (c, a) => 'rgba(' + c + ',' + a + ')';
+
+    // euclidean accumulator — same method as orbit.lua
+    function euclid(k, n) {
+      const out = []; let bucket = 0;
+      for (let i = 0; i < n; i++) { bucket += k; if (bucket >= n) { bucket -= n; out.push(true); } else out.push(false); }
+      return out;
+    }
+    function rotate(arr, r) { const n = arr.length; r = ((r % n) + n) % n; return arr.map((_, i) => arr[(i + r) % n]); }
+
+    // ── HERO: four concentric euclidean rings + sweeping playhead ────────────
+    (function() {
+      const cv = document.getElementById('rings-cv');
+      const g = cv.getContext('2d');
+      const W = cv.width, H = cv.height, CX = W / 2, CY = H / 2;
+      const N = 16;
+      const tracks = [
+        { k: 4, rot: 0, r: 78, hue: ACC },   // kick (outer)
+        { k: 2, rot: 4, r: 60, hue: ACC },   // clap
+        { k: 8, rot: 0, r: 42, hue: ACC },   // closed hat
+        { k: 3, rot: 2, r: 24, hue: ACC },   // open hat (inner)
+      ];
+      tracks.forEach(t => t.pat = rotate(euclid(t.k, N), t.rot));
+      let running = true, lastStep = -1;
+      function frame(now) {
+        requestAnimationFrame(frame);
+        if (!running) return;
+        const t = now / 1000;
+        const head = (t * 2.2) % N;          // playhead position in steps
+        const step = Math.floor(head);
+        const justCrossed = step !== lastStep; lastStep = step;
+        g.clearRect(0, 0, W, H);
+        // playhead angle (12 o'clock start, clockwise)
+        const headAng = head / N * Math.PI * 2 - Math.PI / 2;
+        for (const tr of tracks) {
+          // ring base
+          g.strokeStyle = rgba(DIM, 0.6); g.lineWidth = 1;
+          g.beginPath(); g.arc(CX, CY, tr.r, 0, Math.PI * 2); g.stroke();
+          // step dots
+          for (let i = 0; i < N; i++) {
+            const ang = i / N * Math.PI * 2 - Math.PI / 2;
+            const x = CX + Math.cos(ang) * tr.r, y = CY + Math.sin(ang) * tr.r;
+            const active = tr.pat[i];
+            // flash when the playhead is on an active step
+            const hit = active && i === step;
+            if (active) { g.fillStyle = hit ? rgba(HOT, 1) : rgba(GLOW, 0.85); g.beginPath(); g.arc(x, y, hit ? 3.4 : 2, 0, 7); g.fill(); }
+            else { g.fillStyle = rgba(DIM, 0.7); g.beginPath(); g.arc(x, y, 1, 0, 7); g.fill(); }
+          }
+        }
+        // sweeping playhead line
+        g.strokeStyle = rgba(ACC, 0.5); g.lineWidth = 1;
+        g.beginPath(); g.moveTo(CX, CY);
+        g.lineTo(CX + Math.cos(headAng) * 80, CY + Math.sin(headAng) * 80); g.stroke();
+      }
+      requestAnimationFrame(frame);
+      if ('IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(e => running = e.isIntersecting)).observe(cv);
+    })();
+
+    // ── EUCLID DIAGRAM: E(K,16), K cycling 1→16 ──────────────────────────────
+    (function() {
+      const cv = document.getElementById('euclid-cv');
+      const g = cv.getContext('2d');
+      const W = cv.width, H = cv.height, N = 16, midY = H / 2;
+      let running = true;
+      function frame(now) {
+        requestAnimationFrame(frame);
+        if (!running) return;
+        const t = now / 1000;
+        const k = 1 + Math.floor(t * 0.8) % N;   // K cycles 1..16
+        const pat = euclid(k, N);
+        g.clearRect(0, 0, W, H);
+        const pad = 16, sw = (W - pad * 2) / N;
+        g.fillStyle = rgba(ACC, 0.9); g.font = '10px monospace';
+        g.fillText('E(' + k + ',16)', pad, 16);
+        for (let i = 0; i < N; i++) {
+          const x = pad + i * sw + sw / 2;
+          g.strokeStyle = rgba(DIM, 0.8); g.lineWidth = 1;
+          g.strokeRect(pad + i * sw + 1, midY - 10, sw - 2, 20);
+          if (pat[i]) { g.fillStyle = rgba(HOT, 0.9); g.beginPath(); g.arc(x, midY, 4, 0, 7); g.fill(); }
+          else { g.fillStyle = rgba(DIM, 0.7); g.beginPath(); g.arc(x, midY, 1.3, 0, 7); g.fill(); }
+        }
+      }
+      requestAnimationFrame(frame);
+      if ('IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(e => running = e.isIntersecting)).observe(cv);
+    })();
+
+    // ── TRACK CARDS, each with its own mini euclidean ring ────────────────────
+    (function() {
+      const grid = document.getElementById('track-grid');
+      // verified from orbit.lua: TRACK_NAMES, TRACK_LABELS, DEFAULT_BEATS, DEFAULT_ROT
+      const tracks = [
+        ['KK', 'kick',       4, 0, 'E(4,16) · the four-on-the-floor pulse'],
+        ['CP', 'clap',       2, 4, 'E(2,16) rotated +4 · backbeat accents'],
+        ['CH', 'closed hat', 8, 0, 'E(8,16) · the even off-beat shimmer'],
+        ['OH', 'open hat',   3, 2, 'E(3,16) rotated +2 · syncopated lift'],
+      ];
+      const N = 16;
+      const rings = [];
+      tracks.forEach(tr => {
+        const card = document.createElement('div');
+        card.className = 'track-card';
+        const cv = document.createElement('canvas');
+        cv.width = 54; cv.height = 54;
+        card.appendChild(cv);
+        const info = document.createElement('div');
+        info.className = 'info';
+        info.innerHTML = `<div class="abbr">${tr[0]} <span style="color:var(--faint);font-size:11px">· ${tr[1]}</span></div>` +
+                         `<div class="df">${tr[4]}</div>`;
+        card.appendChild(info);
+        grid.appendChild(card);
+        rings.push({ ctx: cv.getContext('2d'), pat: rotate(euclid(tr[2], N), tr[3]) });
+      });
+      let running = true, lastStep = -1;
+      function frame(now) {
+        requestAnimationFrame(frame);
+        if (!running) return;
+        const t = now / 1000;
+        const head = (t * 2.2) % N, step = Math.floor(head);
+        for (const r of rings) {
+          const g = r.ctx, S = 54, c = S / 2, rad = 20;
+          g.clearRect(0, 0, S, S);
+          g.strokeStyle = rgba(DIM, 0.6); g.lineWidth = 1; g.beginPath(); g.arc(c, c, rad, 0, 7); g.stroke();
+          for (let i = 0; i < N; i++) {
+            const ang = i / N * Math.PI * 2 - Math.PI / 2;
+            const x = c + Math.cos(ang) * rad, y = c + Math.sin(ang) * rad;
+            if (r.pat[i]) { const hit = i === step; g.fillStyle = hit ? rgba(HOT, 1) : rgba(GLOW, 0.85); g.beginPath(); g.arc(x, y, hit ? 2.6 : 1.6, 0, 7); g.fill(); }
+            else { g.fillStyle = rgba(DIM, 0.7); g.beginPath(); g.arc(x, y, 0.8, 0, 7); g.fill(); }
+          }
+          const ha = head / N * Math.PI * 2 - Math.PI / 2;
+          g.strokeStyle = rgba(ACC, 0.5); g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(ha) * rad, c + Math.sin(ha) * rad); g.stroke();
+        }
+      }
+      requestAnimationFrame(frame);
+      if ('IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(e => running = e.isIntersecting)).observe(grid);
+    })();
+
+    // ── KEYBOARD / GAMEPAD NAV ───────────────────────────────────────────────
+    (function() {
+      const SECTIONS = ['concept','euclid','tracks','delay','controls','devlog'];
+      let cur = -1;
+      const hud = document.createElement('div');
+      Object.assign(hud.style, {
+        position: 'fixed', bottom: '18px', right: '20px', fontSize: '10px',
+        letterSpacing: '0.2em', color: 'var(--dim)', fontFamily: 'Courier New, monospace',
+        opacity: '0', transition: 'opacity 0.4s', pointerEvents: 'none', zIndex: '100',
+        textAlign: 'right', lineHeight: '1.8', whiteSpace: 'pre',
+      });
+      document.body.appendChild(hud);
+      let timer;
+      const show = t => { hud.textContent = t; hud.style.opacity = '1'; clearTimeout(timer); timer = setTimeout(() => hud.style.opacity = '0', 2000); };
+      const jump = id => { const el = document.getElementById(id); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); show('→ ' + id); } };
+      const nav = d => { cur = Math.max(-1, Math.min(SECTIONS.length - 1, cur + d)); if (cur < 0) { window.scrollTo({ top: 0, behavior: 'smooth' }); show('→ top'); } else jump(SECTIONS[cur]); };
+      const STEP = 120;
+      document.addEventListener('keydown', e => {
+        if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey) { cur = +e.key - 1; jump(SECTIONS[cur]); return; }
+        if (e.key === '0') { cur = -1; window.scrollTo({ top: 0, behavior: 'smooth' }); show('→ top'); return; }
+        switch (e.key) {
+          case 'ArrowDown': case 'j': window.scrollBy({ top:  STEP, behavior: 'smooth' }); break;
+          case 'ArrowUp':   case 'k': window.scrollBy({ top: -STEP, behavior: 'smooth' }); break;
+          case 'ArrowRight':case 'l': e.preventDefault(); nav(+1); break;
+          case 'ArrowLeft': case 'h': e.preventDefault(); nav(-1); break;
+          case 'g': cur = -1; window.scrollTo({ top: 0, behavior: 'smooth' }); show('→ top'); break;
+          case 'G': cur = SECTIONS.length - 1; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); show('→ end'); break;
+          case '?': show('0 top · 1–6 sections\nh/l ← → sections\nj/k ↑↓ scroll'); break;
+        }
+      });
+      let gi = null, gl = null; const CD = 250;
+      window.addEventListener('gamepadconnected', e => { gi = e.gamepad.index; show('controller connected'); if (!gl) loop(); });
+      window.addEventListener('gamepaddisconnected', e => { if (e.gamepad.index === gi) { gi = null; show('controller disconnected'); } });
+      function loop() {
+        const last = {};
+        (function tick() {
+          gl = requestAnimationFrame(tick);
+          if (gi === null) return;
+          const gp = navigator.getGamepads()[gi]; if (!gp) return;
+          const now = Date.now();
+          const p = (b, k, cd) => { if (gp.buttons[b]?.pressed && now - (last[k] || 0) > (cd || CD)) { last[k] = now; return true; } return false; };
+          if (p(15, 'r')) nav(+1);
+          if (p(14, 'l')) nav(-1);
+          if (p(13, 'd', 80)) window.scrollBy({ top:  STEP });
+          if (p(12, 'u', 80)) window.scrollBy({ top: -STEP });
+          if (p(0, 'a')) nav(+1);
+          if (p(1, 'b')) nav(-1);
+          const y = gp.axes[1] || 0;
+          if (Math.abs(y) > 0.2) window.scrollBy({ top: y * 14 });
+        })();
+      }
+      setTimeout(() => show('press ? for keys'), 1800);
+    })();
+  </script>
+</body>
+</html>
