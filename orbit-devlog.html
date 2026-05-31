@@ -182,14 +182,15 @@
       </p>
     </div>
     <table>
-      <thead><tr><th>division options</th><th>spacing</th></tr></thead>
+      <thead><tr><th>division range</th><th>feel</th></tr></thead>
       <tbody>
-        <tr><td>1/16 · 1/8 · 1/8.</td><td class="note">fast stutters and swung sixteenths</td></tr>
-        <tr><td>1/4 · 1/4. · 1/2</td><td class="note">mid tails, the default for kick &amp; clap (1/4)</td></tr>
-        <tr><td>1/2. · 1 bar</td><td class="note">long, sparse echoes</td></tr>
+        <tr><td>1/64 · 1/48 · 1/32 · 1/24</td><td class="note">buzzes and machine-gun rolls</td></tr>
+        <tr><td>1/16 · 1/12 · 1/8 · 1/6 · 3/16</td><td class="note">fast stutters and triplet swing</td></tr>
+        <tr><td>1/4 · 1/3 · 3/8 · 1/2 · 3/4</td><td class="note">mid tails — default is 1/4</td></tr>
+        <tr><td>1bar · 2bar · 3bar · 4bar</td><td class="note">long, sparse, dub-style echoes</td></tr>
       </tbody>
     </table>
-    <p class="cap" style="margin-top:8px">decay defaults to 0 (delay off) on every track — you dial each tail in deliberately.</p>
+    <p class="cap" style="margin-top:8px">18 tempo-synced divisions including triplets · decay defaults to 0 (delay off) on every track — you dial each tail in deliberately.</p>
   </section>
 
   <!-- CONTROLS -->
@@ -199,11 +200,11 @@
       <thead><tr><th>input</th><th>action</th><th>note</th></tr></thead>
       <tbody>
         <tr><td>E1 · E2 · E3</td><td>select / beats / rotation</td><td class="note">nothing held — edit the selected track's euclidean pattern</td></tr>
-        <tr><td>K2 (tap)</td><td>mute / unmute</td><td class="note">dims the track's ring</td></tr>
+        <tr><td>K2 (tap)</td><td>mute / unmute</td><td class="note">on release, alone — dims the track's ring</td></tr>
         <tr><td>K2 + K3</td><td>play / stop</td><td class="note">the transport toggle</td></tr>
         <tr><td>K2 + E1/E2/E3</td><td>volume / LPF / HPF</td><td class="note">K2 turns the encoders into a mixer</td></tr>
         <tr><td>K3 + E1/E2/E3</td><td>pitch / decay / division</td><td class="note">K3 turns them into pitch + per-track delay</td></tr>
-        <tr><td>hold K1</td><td>info screen</td><td class="note">the controls reference</td></tr>
+        <tr><td>K1 + E1</td><td>delay pitch drift</td><td class="note">the random-walk wobble on the echoes (semitones)</td></tr>
       </tbody>
     </table>
   </section>
@@ -219,7 +220,7 @@
           concentric ring on a single 1/16 clock, with the accumulator-based euclidean generator, the
           per-track trigger-based ghost-retrigger delay (decay in dB + tempo-synced division), a
           K2/K3 hold-modifier control scheme, and the rings-as-sequencer screen. Default kit:
-          kick E(4,16), clap E(2,16) rotated, closed hat E(8,16), open hat E(3,16) rotated.
+          kick E(4,16), clap E(2,16) rotated, closed hat E(8,16), open hat E(2,16) rotated.
         </p>
       </div>
     </div>
@@ -254,11 +255,12 @@
       const g = cv.getContext('2d');
       const W = cv.width, H = cv.height, CX = W / 2, CY = H / 2;
       const N = 16;
+      // kick innermost → open hat outermost, matching the device (radii {9,15,21,27})
       const tracks = [
-        { k: 4, rot: 0, r: 78, hue: ACC },   // kick (outer)
-        { k: 2, rot: 4, r: 60, hue: ACC },   // clap
-        { k: 8, rot: 0, r: 42, hue: ACC },   // closed hat
-        { k: 3, rot: 2, r: 24, hue: ACC },   // open hat (inner)
+        { k: 4, rot: 0, r: 26, hue: ACC },   // kick (inner)
+        { k: 2, rot: 4, r: 44, hue: ACC },   // clap
+        { k: 8, rot: 0, r: 62, hue: ACC },   // closed hat
+        { k: 2, rot: 2, r: 80, hue: ACC },   // open hat (outer)
       ];
       tracks.forEach(t => t.pat = rotate(euclid(t.k, N), t.rot));
       let running = true, lastStep = -1;
@@ -332,7 +334,7 @@
         ['KK', 'kick',       4, 0, 'E(4,16) · the four-on-the-floor pulse'],
         ['CP', 'clap',       2, 4, 'E(2,16) rotated +4 · backbeat accents'],
         ['CH', 'closed hat', 8, 0, 'E(8,16) · the even off-beat shimmer'],
-        ['OH', 'open hat',   3, 2, 'E(3,16) rotated +2 · syncopated lift'],
+        ['OH', 'open hat',   2, 2, 'E(2,16) rotated +2 · onto the offbeats'],
       ];
       const N = 16;
       const rings = [];
